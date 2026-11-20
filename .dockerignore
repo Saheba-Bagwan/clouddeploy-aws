@@ -1,0 +1,14 @@
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+.git/
+.github/
+tests/
+.env
+.env.*
+*.pem
+*.key
+.vscode/
+.idea/
