@@ -97,8 +97,7 @@ jobs:
             --instance-ids "$EC2_INSTANCE_ID" \
             --document-name "AWS-RunShellScript" \
             --comment "CloudDeploy automated deployment" \
-            --parameters '{"commands":["set -e","git config --global --add safe.directory /home/ubuntu/clouddeploy-aws","cd /home/ubuntu/clouddeploy-aws","git fetch origin main","git reset --hard origin/main","docker build -t clouddeploy-aws:latest .","docker rm -f clouddeploy-container || true","docker run -d --name clouddeploy-container --restart unless-stopped -p 80:5000 clouddeploy-aws:latest","for i in $(seq 1 12); do if curl -fsS http://localhost/health; then exit 0; fi; sleep 5; done","exit 1"]}' \
-            --query "Command.CommandId" \
+            --parameters '{"commands":["set -e","export HOME=/root","git config --global --add safe.directory /home/ubuntu/clouddeploy-aws","cd /home/ubuntu/clouddeploy-aws",            --query "Command.CommandId" \
             --output text)
 
           echo "Command ID: $COMMAND_ID"
