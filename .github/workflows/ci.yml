@@ -1,3 +1,4 @@
+
 name: CloudDeploy CI/CD
 
 on:
@@ -49,11 +50,33 @@ jobs:
       id-token: write
 
     steps:
-      - name: Debug GitHub Identity
+      - name: Debug GitHub OIDC Claims
+        shell: bash
         run: |
+          set -euo pipefail
+
           echo "Repository: $GITHUB_REPOSITORY"
           echo "Branch: $GITHUB_REF"
           echo "Event: $GITHUB_EVENT_NAME"
+
+          response=$(curl -fsS \
+            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=sts.amazonaws.com")
+
+          OIDC_TOKEN="$response" python3 - <<'PY'
+          import os, json, base64
+
+          token = json.loads(os.environ["OIDC_TOKEN"])["value"]
+          payload = token.split(".")[1]
+          payload += "=" * (-len(payload) % 4)
+          claims = json.loads(base64.urlsafe_b64decode(payload))
+
+          print(json.dumps({
+              "iss": claims.get("iss"),
+              "aud": claims.get("aud"),
+              "sub": claims.get("sub")
+          }, indent=2))
+          PY
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
