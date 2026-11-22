@@ -105,8 +105,10 @@ jobs:
               "git reset --hard origin/main",
               "docker build -t clouddeploy-aws:latest .",
               "docker rm -f clouddeploy-container || true",
-              "docker run -d --name clouddeploy-container --restart unless-stopped -p 80:5000 clouddeploy-aws:latest",
+              "docker run -d --name clouddeploy-container --restart unless-stopped --publish 80:5000 --memory=256m --cpus=0.50 --pids-limit=100 --read-only --tmpfs /tmp:rw,noexec,nosuid,size=16m --cap-drop ALL --security-opt no-new-privileges:true clouddeploy-aws:latest",
               "for i in $(seq 1 12); do if curl -fsS http://localhost/health; then exit 0; fi; sleep 5; done",
+              "echo 'Application health check failed'",
+              "docker logs --tail 100 clouddeploy-container || true",
               "exit 1"
           ]
 
@@ -124,7 +126,7 @@ jobs:
           COMMAND_ID=$(aws ssm send-command \
             --instance-ids "$EC2_INSTANCE_ID" \
             --document-name "AWS-RunShellScript" \
-            --comment "CloudDeploy automated deployment" \
+            --comment "CloudDeploy automated deployment with Docker security hardening" \
             --parameters file://ssm-parameters.json \
             --query "Command.CommandId" \
             --output text)
